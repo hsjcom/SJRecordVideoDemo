@@ -1,0 +1,30 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "5FFFAFDA4871B7A41A74A8124366ABB7A53F157B",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "0C32EF1DCB83D9B4EA2D34A1F7DFBF0AFCC47EB4" : 9223372036854775807,
+    "5FFFAFDA4871B7A41A74A8124366ABB7A53F157B" : 9223372036854775807
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "49B0D9FC-A956-48B6-8D7C-9C6A9033C98F",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "0C32EF1DCB83D9B4EA2D34A1F7DFBF0AFCC47EB4" : "SJRecordVideoDemo\/SJRecordVideoDemo\/SJRecordEngine\/VideoHandleUtils\/",
+    "5FFFAFDA4871B7A41A74A8124366ABB7A53F157B" : "SJRecordVideoDemo\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "SJRecordVideoDemo",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "SJRecordVideoDemo.xcodeproj",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/hsjcom\/VideoHandleUtils.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "0C32EF1DCB83D9B4EA2D34A1F7DFBF0AFCC47EB4"
+    },
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/hsjcom\/SJRecordVideoDemo.git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Git",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "5FFFAFDA4871B7A41A74A8124366ABB7A53F157B"
+    }
+  ]
+}
