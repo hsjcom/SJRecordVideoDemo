@@ -33,7 +33,7 @@
 		B2402C6E1EF8CF0D009751D4 /* videoRCCloseBtn@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = B2402C6A1EF8CF0D009751D4 /* videoRCCloseBtn@3x.png */; };
 		B2402C6F1EF8CF0D009751D4 /* videoRCFlashBtn@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = B2402C6B1EF8CF0D009751D4 /* videoRCFlashBtn@2x.png */; };
 		B2402C701EF8CF0D009751D4 /* videoRCFlashBtn@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = B2402C6C1EF8CF0D009751D4 /* videoRCFlashBtn@3x.png */; };
-		B2402C741EF91717009751D4 /* VideoHandleUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = B2402C731EF91717009751D4 /* VideoHandleUtils.m */; };
+		B2402C771EF917A0009751D4 /* VideoHandleUtils.m in Sources */ = {isa = PBXBuildFile; fileRef = B2402C761EF917A0009751D4 /* VideoHandleUtils.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -95,8 +95,8 @@
 		B2402C6A1EF8CF0D009751D4 /* videoRCCloseBtn@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "videoRCCloseBtn@3x.png"; sourceTree = "<group>"; };
 		B2402C6B1EF8CF0D009751D4 /* videoRCFlashBtn@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "videoRCFlashBtn@2x.png"; sourceTree = "<group>"; };
 		B2402C6C1EF8CF0D009751D4 /* videoRCFlashBtn@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "videoRCFlashBtn@3x.png"; sourceTree = "<group>"; };
-		B2402C721EF91717009751D4 /* VideoHandleUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VideoHandleUtils.h; sourceTree = "<group>"; };
-		B2402C731EF91717009751D4 /* VideoHandleUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = VideoHandleUtils.m; sourceTree = "<group>"; };
+		B2402C751EF917A0009751D4 /* VideoHandleUtils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = VideoHandleUtils.h; sourceTree = "<group>"; };
+		B2402C761EF917A0009751D4 /* VideoHandleUtils.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = VideoHandleUtils.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -198,7 +198,8 @@
 		B2402C2A1EF7D802009751D4 /* SJRecordEngine */ = {
 			isa = PBXGroup;
 			children = (
-				B2402C711EF91717009751D4 /* VideoHandleUtils */,
+				B2402C751EF917A0009751D4 /* VideoHandleUtils.h */,
+				B2402C761EF917A0009751D4 /* VideoHandleUtils.m */,
 				B2402C2B1EF7D832009751D4 /* SJRecordEngine.h */,
 				B2402C2C1EF7D832009751D4 /* SJRecordEngine.m */,
 				B2402C2E1EF7D91D009751D4 /* SJRecordEncoder.h */,
@@ -234,15 +235,6 @@
 				B2402C5B1EF8C44A009751D4 /* videoRCTurnBtn@3x.png */,
 			);
 			path = Resources;
-			sourceTree = "<group>";
-		};
-		B2402C711EF91717009751D4 /* VideoHandleUtils */ = {
-			isa = PBXGroup;
-			children = (
-				B2402C721EF91717009751D4 /* VideoHandleUtils.h */,
-				B2402C731EF91717009751D4 /* VideoHandleUtils.m */,
-			);
-			path = VideoHandleUtils;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -400,7 +392,7 @@
 				B2402C4F1EF8C3F8009751D4 /* VideoRecordButton2.m in Sources */,
 				B2402C2D1EF7D832009751D4 /* SJRecordEngine.m in Sources */,
 				B2402C681EF8CB62009751D4 /* VideoPreviewController.m in Sources */,
-				B2402C741EF91717009751D4 /* VideoHandleUtils.m in Sources */,
+				B2402C771EF917A0009751D4 /* VideoHandleUtils.m in Sources */,
 				B2402BFC1EF7D7BC009751D4 /* AppDelegate.m in Sources */,
 				B2402BF91EF7D7BC009751D4 /* main.m in Sources */,
 			);
