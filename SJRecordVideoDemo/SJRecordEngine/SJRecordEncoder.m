@@ -38,8 +38,8 @@
                               width:(NSInteger)width
                            channels:(int)ch
                             samples:(Float64)rate {
-    SJRecordEncoder *recordEncoder = [SJRecordEncoder alloc];
-    return [recordEncoder initPath:path height:height width:width channels:ch samples:rate];
+    SJRecordEncoder *recordEncoder = [[SJRecordEncoder alloc] initPath:path height:height width:width channels:ch samples:rate];
+    return recordEncoder;
 }
 
 /**
@@ -83,7 +83,7 @@
                               nil];
     //初始化视频写入类
     _videoInput = [AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeVideo outputSettings:settings];
-    //表明输入是否应该调整其处理为实时数据源的数据
+    //实时采集数据源
     _videoInput.expectsMediaDataInRealTime = YES;
     //将视频输入源加入
     [_writer addInput:_videoInput];
@@ -102,7 +102,7 @@
                               nil];
     //初始化音频写入类
     _audioInput = [AVAssetWriterInput assetWriterInputWithMediaType:AVMediaTypeAudio outputSettings:settings];
-    //表明输入是否应该调整其处理为实时数据源的数据
+    //实时采集数据源
     _audioInput.expectsMediaDataInRealTime = YES;
     //将音频输入源加入
     [_writer addInput:_audioInput];
@@ -112,7 +112,7 @@
  完成视频录制时调用
  */
 - (void)finishWithCompletionHandler:(void (^)(void))handler {
-    [_writer finishWritingWithCompletionHandler: handler];
+    [_writer finishWritingWithCompletionHandler:handler];
 }
 
 /**
@@ -137,7 +137,7 @@
         //判断是否是视频
         if (isVideo) {
             //视频输入是否准备接受更多的媒体数据
-            if (_videoInput.readyForMoreMediaData == YES) {
+            if (_videoInput.readyForMoreMediaData) {
                 //拼接数据
                 [_videoInput appendSampleBuffer:sampleBuffer];
                 return YES;

@@ -10,7 +10,8 @@
 #import "SJRecordEncoder.h"
 #import <AVFoundation/AVFoundation.h>
 #import <Photos/Photos.h>
-
+#import <AVKit/AVKit.h>
+#import <UIKit/UIKit.h>
 @interface SJRecordEngine ()<AVCaptureVideoDataOutputSampleBufferDelegate,AVCaptureAudioDataOutputSampleBufferDelegate, CAAnimationDelegate> {
     CMTime _timeOffset;//录制的偏移CMTime
     CMTime _lastVideo;//记录上一次视频数据文件的CMTime
@@ -290,6 +291,9 @@
     if (!_videoOutput) {
         _videoOutput = [[AVCaptureVideoDataOutput alloc] init];
         [_videoOutput setSampleBufferDelegate:self queue:self.captureQueue];
+        /**
+         除了设置代理以外，还需要设置一个serial queue来供代理调用，这里必须使用serial queue来保证传给delegate的帧数据的顺序正确。我们可以使用这个 queue 来分发和处理视频帧
+         */
         NSDictionary *setcapSettings = [NSDictionary dictionaryWithObjectsAndKeys:
                                         [NSNumber numberWithInt:kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange], kCVPixelBufferPixelFormatTypeKey,
                                         nil];
@@ -313,7 +317,9 @@
  视频连接
  */
 - (AVCaptureConnection *)videoConnection {
-    _videoConnection = [self.videoOutput connectionWithMediaType:AVMediaTypeVideo];
+    if (!_videoConnection) {
+        _videoConnection = [self.videoOutput connectionWithMediaType:AVMediaTypeVideo];
+    }
     return _videoConnection;
 }
 
@@ -419,6 +425,17 @@
             [self.recordSession addInput:self.backCameraInput];
         }
     }
+    
+    /** 平滑切换
+    [self.recordSession beginConfiguration];
+    
+    [self.recordSession removeInput:self.frontCameraInput];
+    if ([self.recordSession canAddInput:self.backCameraInput]) {
+        [self.recordSession addInput:self.backCameraInput];
+    }
+
+    [self.recordSession commitConfiguration];
+     */
 }
 
 /**
@@ -442,7 +459,7 @@
 - (void)openFlashLight {
     AVCaptureDevice *backCamera = [self backCamera];
     if (backCamera.torchMode == AVCaptureTorchModeOff) {
-        [backCamera lockForConfiguration:nil];
+        [backCamera lockForConfiguration:nil]; //保证平滑的切换
         backCamera.torchMode = AVCaptureTorchModeOn;
         backCamera.flashMode = AVCaptureFlashModeOn;
         [backCamera unlockForConfiguration];
@@ -493,6 +510,9 @@
 - (void)captureOutput:(AVCaptureOutput *)captureOutput
 didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
        fromConnection:(AVCaptureConnection *)connection {
+    /**
+     视频数据及其关联的元数据在 AVFoundation 中由 Core Media 框架中的对象表示。 Core Media 使用 CMSampleBuffer 表示视频数据。CMSampleBuffer 是一种 Core Foundation 风格的类型。CMSampleBuffer 的一个实例在对应的 Core Video pixel buffer 中包含了视频帧的数据
+     */
     BOOL isVideo = YES;
     //限制在一个线程执行
     @synchronized(self) {
@@ -504,7 +524,7 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
         }
         //初始化编码器，当有音频和视频参数时创建编码器
         if ((self.recordEncoder == nil) && !isVideo) {
-            CMFormatDescriptionRef fmt = CMSampleBufferGetFormatDescription(sampleBuffer);
+            CMFormatDescriptionRef fmt = CMSampleBufferGetFormatDescription(sampleBuffer); //格式信息 CMFormatDescription
             [self setAudioFormat:fmt];
             NSString *videoName = [self getUploadFileType:@"video" fileType:@"mp4"];
             self.videoPath = [[self getVideoCachePath] stringByAppendingPathComponent:videoName];
@@ -517,26 +537,29 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
         //判断是否中断录制过
         if (self.discont) {
             if (isVideo) {
-                return;
+                return; //如果是暂停的时候，进来的buffer 全部丢弃
             }
             self.discont = NO;
             // 计算暂停的时间
-            CMTime pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer);
+            CMTime pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer); //原始演示时间的时间戳
             CMTime last = isVideo ? _lastVideo : _lastAudio;
             if (last.flags & kCMTimeFlags_Valid) {
                 if (_timeOffset.flags & kCMTimeFlags_Valid) {
-                    pts = CMTimeSubtract(pts, _timeOffset);
+                    pts = CMTimeSubtract(pts, _timeOffset); //减法 pts - _timeOffset
                 }
+                // 取得现在的时间 和 上一次时间 的时间差
                 CMTime offset = CMTimeSubtract(pts, last);
                 if (_timeOffset.value == 0) {
                     _timeOffset = offset;
-                }else {
-                    _timeOffset = CMTimeAdd(_timeOffset, offset);
+                } else {
+                    _timeOffset = CMTimeAdd(_timeOffset, offset); //加法 _timeOffset + offset
                 }
             }
+            // 清空记录
             _lastVideo.flags = 0;
             _lastAudio.flags = 0;
         }
+        
         // 增加sampleBuffer的引用计时,这样我们可以释放这个或修改这个数据，防止在修改时被释放
         CFRetain(sampleBuffer);
         if (_timeOffset.value > 0) {
@@ -561,7 +584,7 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
         self.startTime = dur;
     }
     CMTime sub = CMTimeSubtract(dur, self.startTime);
-    self.currentRecordTime = CMTimeGetSeconds(sub);
+    self.currentRecordTime = CMTimeGetSeconds(sub); //获取秒数
     if (self.currentRecordTime > self.maxRecordTime) {
         if (self.currentRecordTime - self.maxRecordTime < 0.1) {
             if ([self.delegate respondsToSelector:@selector(recordProgress:)]) {
@@ -584,12 +607,23 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
 
 /**
  设置音频格式
+ 
+ AudioStreamBasicDescription:
+ mSampleRate;       采样率, eg. 44100
+ mFormatID;         格式, eg. kAudioFormatLinearPCM
+ mFormatFlags;      标签格式, eg. kAudioFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked
+ mBytesPerPacket;   每个Packet的Bytes数量, eg. 2
+ mFramesPerPacket;  每个Packet的帧数量, eg. 1
+ mBytesPerFrame;    (mBitsPerChannel / 8 * mChannelsPerFrame) 每帧的Byte数, eg. 2
+ mChannelsPerFrame; 1:单声道；2:立体声, eg. 1
+ mBitsPerChannel;   语音每采样点占用位数[8/16/24/32], eg. 16
+ mReserved;         保留
+ 
  */
 - (void)setAudioFormat:(CMFormatDescriptionRef)fmt {
     const AudioStreamBasicDescription *asbd = CMAudioFormatDescriptionGetStreamBasicDescription(fmt);
-    _samplerate = asbd -> mSampleRate;
-    _channels = asbd -> mChannelsPerFrame;
-    
+    _samplerate = asbd -> mSampleRate; //采样率
+    _channels = asbd -> mChannelsPerFrame; //声道
 }
 
 /**
@@ -609,5 +643,27 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
     free(pInfo);
     return sout;
 }
+
+/**
+ 视频暂停 多视频合成 流程
+ 点击暂停，就执行 stopRunning 方法。恢复录制的时候重新录制下一个。这样就录制了多个小视频。然后手动把他们拼接起来。
+ 点击暂停的时候，CMSampleBufferRef 不写入。恢复录制的时候，再继续写入。
+ 两种方法对应的功能点:
+ 
+ 多段视频的拼接
+ 时间偏移量（就是暂停的时候）的计算
+ */
+
+/**
+ 音视频中的时间 CMTime
+ 
+ 一个c结构体 ，包括：
+ 
+ typedef int64_t CMTimeValue : 分子
+ typedef int32_t CMTimeScale : 分母 (必须为正，vidio文件的推荐范围是movie files range from 600 to 90000)
+ typedef int64_t CMTimeEpoch : 类似循环次数(eg, loop number)加减法必须在同一个 epoch内
+ uint32_t, CMTimeFlags :标记位 (一个枚举值)
+ second = value/timescale
+ */
 
 @end
