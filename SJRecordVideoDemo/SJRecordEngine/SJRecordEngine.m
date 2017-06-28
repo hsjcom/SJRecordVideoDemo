@@ -12,6 +12,7 @@
 #import <Photos/Photos.h>
 #import <AVKit/AVKit.h>
 #import <UIKit/UIKit.h>
+
 @interface SJRecordEngine ()<AVCaptureVideoDataOutputSampleBufferDelegate,AVCaptureAudioDataOutputSampleBufferDelegate, CAAnimationDelegate> {
     CMTime _timeOffset;//录制的偏移CMTime
     CMTime _lastVideo;//记录上一次视频数据文件的CMTime
@@ -24,6 +25,7 @@
 }
 
 @property (nonatomic, strong) SJRecordEncoder *recordEncoder;
+
 @property (nonatomic, strong) AVCaptureVideoPreviewLayer *previewLayer;//捕获到的视频呈现的layer
 @property (nonatomic, strong) AVCaptureSession *recordSession;//捕获视频的会话
 //Input
@@ -36,7 +38,9 @@
 //Output
 @property (nonatomic, strong) AVCaptureVideoDataOutput *videoOutput;//视频输出
 @property (nonatomic, strong) AVCaptureAudioDataOutput *audioOutput;//音频输出
-@property (nonatomic, copy) dispatch_queue_t captureQueue;//录制的队列
+
+@property (nonatomic,   copy) dispatch_queue_t captureQueue;//录制的队列
+
 @property (nonatomic, assign) BOOL discont;//是否中断
 @property (nonatomic, assign) CMTime startTime;//开始录制的时间
 @property (nonatomic, assign) BOOL isCapturing;//正在录制
@@ -199,6 +203,7 @@
 }
 
 #pragma mark - setter & getter
+#pragma mark recordSession
 
 /**
  捕获视频的会话
@@ -298,6 +303,11 @@
                                         [NSNumber numberWithInt:kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange], kCVPixelBufferPixelFormatTypeKey,
                                         nil];
         _videoOutput.videoSettings = setcapSettings;
+        
+        /** default YES 来确保晚到的帧会被丢掉来避免延迟。
+         如果不介意延迟，而更想要处理更多的帧，那就设置这个值为 NO，但是这并不意味着不会丢帧，只是不会被那么早或那么高效的丢掉。
+         */
+        _videoOutput.alwaysDiscardsLateVideoFrames = YES;
     }
     return _videoOutput;
 }
@@ -505,14 +515,22 @@
 }
 
 #pragma mark - 写入数据
-#pragma mark AVCaptureVideoDataOutputSampleBufferDelegate
+#pragma mark AVCaptureVideoDataOutputSampleBufferDelegate & AVCaptureAudioDataOutputSampleBufferDelegate
+
+/**
+ CMSampleBuffer
+ 视频数据及其关联的元数据在 AVFoundation 中由 Core Media 框架中的对象表示。 Core Media 使用 CMSampleBuffer 表示视频数据。CMSampleBuffer 是一种 Core Foundation 风格的类型。CMSampleBuffer 的一个实例在对应的 Core Video pixel buffer 中包含了视频帧的数据
+ */
+
+/**
+ captureOutput:didOutputSampleBuffer:fromConnection:
+ 中处理视频帧的时间开销不要超过分配给一帧的处理时长。如果这里处理的太长，那么 AV Foundation 将会停止发送视频帧给代理，也会停止发给其他输出端，比如 preview layer。
+ */
 
 - (void)captureOutput:(AVCaptureOutput *)captureOutput
 didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
        fromConnection:(AVCaptureConnection *)connection {
-    /**
-     视频数据及其关联的元数据在 AVFoundation 中由 Core Media 框架中的对象表示。 Core Media 使用 CMSampleBuffer 表示视频数据。CMSampleBuffer 是一种 Core Foundation 风格的类型。CMSampleBuffer 的一个实例在对应的 Core Video pixel buffer 中包含了视频帧的数据
-     */
+    
     BOOL isVideo = YES;
     //限制在一个线程执行
     @synchronized(self) {
@@ -562,6 +580,7 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
         
         // 增加sampleBuffer的引用计时,这样我们可以释放这个或修改这个数据，防止在修改时被释放
         CFRetain(sampleBuffer);
+        
         if (_timeOffset.value > 0) {
             CFRelease(sampleBuffer);
             //根据得到的timeOffset调整
@@ -600,8 +619,10 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
             [self.delegate recordProgress:self.currentRecordTime / self.maxRecordTime];
         });
     }
+    
     // 进行数据编码
     [self.recordEncoder encodeFrame:sampleBuffer isVideo:isVideo];
+    
     CFRelease(sampleBuffer);
 }
 
@@ -646,10 +667,10 @@ didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
 
 /**
  视频暂停 多视频合成 流程
- 点击暂停，就执行 stopRunning 方法。恢复录制的时候重新录制下一个。这样就录制了多个小视频。然后手动把他们拼接起来。
- 点击暂停的时候，CMSampleBufferRef 不写入。恢复录制的时候，再继续写入。
- 两种方法对应的功能点:
+ 1.点击暂停，就执行 stopRunning 方法。恢复录制的时候重新录制下一个。这样就录制了多个小视频。然后手动把他们拼接起来。
+ 2.点击暂停的时候，CMSampleBufferRef 不写入。恢复录制的时候，再继续写入。
  
+ 两种方法对应的功能点:
  多段视频的拼接
  时间偏移量（就是暂停的时候）的计算
  */

@@ -56,6 +56,7 @@
         //先把路径下的文件给删除掉，保证录制的文件是最新的
         [[NSFileManager defaultManager] removeItemAtPath:self.path error:nil];
         NSURL *url = [NSURL fileURLWithPath:self.path];
+        
         //初始化写入媒体类型为MP4类型
         _writer = [AVAssetWriter assetWriterWithURL:url fileType:AVFileTypeMPEG4 error:nil];
         //使其更适合在网络上播放
@@ -86,14 +87,16 @@
     //实时采集数据源
     _videoInput.expectsMediaDataInRealTime = YES;
     //将视频输入源加入
-    [_writer addInput:_videoInput];
+    if ([_writer canAddInput:_videoInput]) {
+        [_writer addInput:_videoInput];
+    }
 }
 
 /**
  初始化音频输入
  */
 - (void)initAudioInputChannels:(int)ch samples:(Float64)rate {
-    //音频的一些配置包括音频各种这里为AAC,音频通道、采样率和音频的比特率
+    //音频的一些配置包括音频各种这里为AAC,音频通道、采样率和音频的比特率 128 kbps
     NSDictionary *settings = [NSDictionary dictionaryWithObjectsAndKeys:
                               [NSNumber numberWithInt:kAudioFormatMPEG4AAC], AVFormatIDKey,
                               [NSNumber numberWithInt:ch], AVNumberOfChannelsKey,
@@ -105,7 +108,9 @@
     //实时采集数据源
     _audioInput.expectsMediaDataInRealTime = YES;
     //将音频输入源加入
-    [_writer addInput:_audioInput];
+    if ([_writer canAddInput:_audioInput]) {
+        [_writer addInput:_audioInput];
+    }
 }
 
 /**
